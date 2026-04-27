@@ -1,0 +1,28 @@
+{
+    "name": "adminthickwire",
+    "version": "1.0.0",
+    "private": true,
+    "scripts": {
+        "dev": "next dev -p 3002",
+        "build": "next build",
+        "start": "next start -p 3002",
+        "lint": "next lint"
+    },
+    "dependencies": {
+        "@tanstack/react-query": "^5.56.0",
+        "axios": "^1.7.7",
+        "lucide-react": "^1.11.0",
+        "next": "^14.2.0",
+        "papaparse": "^5.4.1",
+        "react": "^18.3.0",
+        "react-dom": "^18.3.0",
+        "recharts": "^2.12.0"
+    },
+    "devDependencies": {
+        "@types/node": "^22.5.0",
+        "@types/papaparse": "^5.3.14",
+        "@types/react": "^18.3.0",
+        "@types/react-dom": "^18.3.0",
+        "typescript": "^5.5.4"
+    }
+}
