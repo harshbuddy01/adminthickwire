@@ -736,3 +736,65 @@ textarea.form-input {
         width: 100vw;
     }
 }
+
+/* ─── Premium Dark Login Restyling ─────────────────────────────────── */
+.premium-dark {
+    background: radial-gradient(circle at top right, #1f2937, #0a0a0a, #000);
+}
+
+.branding-top-right {
+    position: absolute;
+    top: 24px;
+    right: 32px;
+    color: #6b7280;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.premium-mode {
+    background: rgba(17, 17, 17, 0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    position: relative;
+    overflow: hidden;
+}
+
+.card-highlight {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #10b981, transparent);
+    opacity: 0.6;
+}
+
+.dark-input {
+    background: #1a1a1a;
+    border: 1px solid #333;
+    color: white;
+}
+
+.dark-input:focus {
+    border-color: #10b981;
+    box-shadow: 0 0 0 1px #10b981;
+}
+
+.dark-btn {
+    background: white;
+    color: black;
+    border: none;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.dark-btn:hover {
+    background: #e5e7eb;
+}
