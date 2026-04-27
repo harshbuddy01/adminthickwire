@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 // Common pure SVG icons instead of emojis
 const Icons = {
@@ -41,6 +41,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     const { user, loading, logout } = useAuth();
     const pathname = usePathname();
     const router = useRouter();
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+    // Close menu on route change
+    useEffect(() => {
+        setIsMobileMenuOpen(false);
+    }, [pathname]);
 
     useEffect(() => {
         if (!loading && !user) {
@@ -52,7 +58,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
     return (
         <div className="admin-layout">
-            <aside className="sidebar">
+            {/* Mobile Overlay */}
+            {isMobileMenuOpen && (
+                <div
+                    className="mobile-overlay"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 90 }}
+                />
+            )}
+
+            <aside className={`sidebar ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
                 <div className="sidebar-logo">
                     ThickWire
                     <span style={{ marginLeft: '4px', display: 'flex', alignItems: 'center' }}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 2L11 13" /><path d="M22 2l-7 20-4-9-9-4 20-7z" /></svg></span>
@@ -100,9 +115,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </aside>
 
             <div className="main-content">
-                <div className="top-header" style={{ padding: '0 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border)' }}>
+                <div className="top-header">
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem', color: '#64748b' }}>
-                        Welcome back, <span style={{ fontWeight: 800, color: '#0f172a', textTransform: 'uppercase' }}>{user.email.split('@')[0]}</span>
+                        <div
+                            className="mobile-menu-btn"
+                            style={{ display: 'none', cursor: 'pointer', marginRight: '8px' }}
+                            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                        >
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="18" x2="21" y2="18" /></svg>
+                        </div>
+                        <span className="welcome-text">Welcome back,</span> <span style={{ fontWeight: 800, color: '#0f172a', textTransform: 'uppercase' }}>{user.email.split('@')[0]}</span>
                         {user.role === 'SUPER_ADMIN' && (
                             <span style={{
                                 background: '#f5f3ff', color: '#8b5cf6', padding: '4px 8px', borderRadius: '12px',
