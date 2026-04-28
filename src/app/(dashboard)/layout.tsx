@@ -24,6 +24,7 @@ const Icons = {
 const navItems = [
     { label: 'Overview', icon: Icons.Dashboard, href: '/' },
     { label: 'Services List', icon: Icons.List, href: '/services' },
+    { label: 'Plans', icon: Icons.Target, href: '/plans' },
     { label: 'Orders Pipeline', icon: Icons.Package, href: '/orders' },
     { label: 'Inventory', icon: Icons.Database, href: '/inventory' },
     { label: 'Customers', icon: Icons.Users, href: '/customers' },
@@ -101,11 +102,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <div className="sidebar-footer" style={{ borderTop: 'none', padding: '16px 24px', paddingBottom: '32px' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                         <div>
-                            <div className="sidebar-user-name" style={{ color: '#0f172a' }}>{user.email.split('@')[0]}</div>
-                            <div className="sidebar-user-role" style={{ color: '#8b5cf6' }}>{user.role}</div>
+                            <div className="sidebar-user-name" style={{ color: '#ffffff' }}>{user.email.split('@')[0]}</div>
+                            <div className="sidebar-user-role" style={{ color: '#818cf8' }}>{user.role}</div>
                         </div>
                         <button onClick={logout} style={{
-                            marginTop: '12px', background: 'transparent', border: 'none', color: '#ef4444',
+                            marginTop: '12px', background: 'transparent', border: 'none', color: '#f87171',
                             display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer',
                             fontSize: '0.8rem', fontWeight: 600, padding: '4px 0'
                         }}>
