@@ -25,6 +25,7 @@ const navItems = [
     { label: 'Overview', icon: Icons.Dashboard, href: '/' },
     { label: 'Services List', icon: Icons.List, href: '/services' },
     { label: 'Orders Pipeline', icon: Icons.Package, href: '/orders' },
+    { label: 'Inventory', icon: Icons.Database, href: '/inventory' },
     { label: 'Customers', icon: Icons.Users, href: '/customers' },
     { label: 'Subscriptions', icon: Icons.Target, href: '/subscriptions' },
     { label: 'Coupons', icon: Icons.Package, href: '/coupons' }, // Kept package for Coupons, could change icon later
