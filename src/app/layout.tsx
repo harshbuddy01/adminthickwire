@@ -5,6 +5,10 @@ import { AuthProvider } from '@/contexts/AuthContext';
 export const metadata: Metadata = {
     title: 'ThickWire Admin',
     description: 'ThickWire Marketplace Admin Panel',
+    icons: {
+        icon: '/favicon.ico',
+        apple: '/apple-icon.png',
+    },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
