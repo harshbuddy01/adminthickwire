@@ -1,7 +1,5 @@
 import axios from 'axios';
 
-let accessToken: string | null = null;
-
 const api = axios.create({
     baseURL: process.env.NEXT_PUBLIC_API_URL || 'https://thickwire-api-production.up.railway.app/api/v1',
     timeout: 15000,
@@ -11,8 +9,9 @@ const api = axios.create({
 
 // Attach JWT to requests
 api.interceptors.request.use((config) => {
-    if (accessToken) {
-        config.headers.Authorization = `Bearer ${accessToken}`;
+    const token = getAccessToken();
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
 });
@@ -26,11 +25,11 @@ api.interceptors.response.use(
             original._retry = true;
             try {
                 const { data } = await api.post('/auth/refresh');
-                accessToken = data.accessToken;
-                original.headers.Authorization = `Bearer ${accessToken}`;
+                setAccessToken(data.accessToken);
+                original.headers.Authorization = `Bearer ${data.accessToken}`;
                 return api(original);
             } catch {
-                accessToken = null;
+                setAccessToken(null);
                 if (typeof window !== 'undefined') {
                     window.location.href = '/login';
                 }
@@ -41,11 +40,17 @@ api.interceptors.response.use(
 );
 
 export function setAccessToken(token: string | null) {
-    accessToken = token;
+    if (typeof window === 'undefined') return;
+    if (token) {
+        sessionStorage.setItem('adminAccessToken', token);
+    } else {
+        sessionStorage.removeItem('adminAccessToken');
+    }
 }
 
-export function getAccessToken() {
-    return accessToken;
+export function getAccessToken(): string | null {
+    if (typeof window === 'undefined') return null;
+    return sessionStorage.getItem('adminAccessToken');
 }
 
 export default api;
