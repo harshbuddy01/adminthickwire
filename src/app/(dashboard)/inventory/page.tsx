@@ -13,7 +13,10 @@ export default function InventoryPage() {
     const [total, setTotal] = useState(0);
     const [page, setPage] = useState(1);
     const [mode, setMode] = useState<'table' | 'single' | 'csv'>('table');
-    const [singleContent, setSingleContent] = useState('');
+    const [credEmail, setCredEmail] = useState('');
+    const [credPass, setCredPass] = useState('');
+    const [credPhone, setCredPhone] = useState('');
+    const [credType, setCredType] = useState<'email_pass' | 'number_pass' | 'raw'>('email_pass');
     const [csvData, setCsvData] = useState<string[]>([]);
     const [message, setMessage] = useState('');
     const [loading, setLoading] = useState(false);
@@ -58,9 +61,20 @@ export default function InventoryPage() {
     }, [selectedPlanId, page]);
 
     const handleSingle = async () => {
-        if (!singleContent.trim()) return;
-        await api.post('/inventory/single', { planId: selectedPlanId, content: singleContent });
-        setSingleContent(''); setMessage('✅ Item added successfully!'); setMode('table');
+        let content = '';
+        if (credType === 'email_pass') {
+            if (!credEmail.trim() || !credPass.trim()) return;
+            content = credPhone.trim() ? `${credEmail.trim()}:${credPass.trim()}:${credPhone.trim()}` : `${credEmail.trim()}:${credPass.trim()}`;
+        } else if (credType === 'number_pass') {
+            if (!credPhone.trim() || !credPass.trim()) return;
+            content = `${credPhone.trim()}:${credPass.trim()}`;
+        } else {
+            if (!credEmail.trim()) return;
+            content = credEmail.trim();
+        }
+        await api.post('/inventory/single', { planId: selectedPlanId, content });
+        setCredEmail(''); setCredPass(''); setCredPhone('');
+        setMessage('✅ Credential added successfully!'); setMode('table');
         fetchItems();
         setTimeout(() => setMessage(''), 4000);
     };
@@ -177,13 +191,75 @@ export default function InventoryPage() {
                 </div>
 
                 {mode === 'single' && (
-                    <div style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: '12px', padding: 24 }}>
-                        <h3 style={{ marginBottom: 16, fontWeight: 700, fontSize: '1rem' }}>Add Single Credential</h3>
-                        <div className="form-group">
-                            <label className="form-label">Content (email:password format)</label>
-                            <textarea className="form-input" placeholder="email@example.com:password123" value={singleContent} onChange={e => setSingleContent(e.target.value)} />
+                    <div style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: '12px', padding: 28, animation: 'fadeIn 0.2s ease-out' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+                            <h3 style={{ fontWeight: 800, fontSize: '1.05rem', color: '#0f172a' }}>Add Single Credential</h3>
+                            <div style={{ display: 'flex', gap: 6, background: '#F1F5F9', padding: 4, borderRadius: 8 }}>
+                                {[
+                                    { id: 'email_pass', label: '📧 Email + Pass' },
+                                    { id: 'number_pass', label: '📱 Number + Pass' },
+                                    { id: 'raw', label: '📝 Raw Text' },
+                                ].map(t => (
+                                    <button key={t.id} onClick={() => setCredType(t.id as any)}
+                                        style={{
+                                            padding: '6px 14px', fontSize: '0.75rem', fontWeight: 700, border: 'none', borderRadius: 6,
+                                            cursor: 'pointer', fontFamily: 'var(--font)', transition: 'all 0.15s',
+                                            background: credType === t.id ? '#0F172A' : 'transparent',
+                                            color: credType === t.id ? 'white' : '#64748b',
+                                        }}>{t.label}</button>
+                                ))}
+                            </div>
                         </div>
-                        <button className="btn btn-primary" onClick={handleSingle}>Add Item</button>
+
+                        {credType === 'email_pass' && (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                                    <div className="form-group" style={{ margin: 0 }}>
+                                        <label className="form-label">Email / Username *</label>
+                                        <input className="form-input" type="email" placeholder="user@netflix.com" value={credEmail} onChange={e => setCredEmail(e.target.value)} />
+                                    </div>
+                                    <div className="form-group" style={{ margin: 0 }}>
+                                        <label className="form-label">Password *</label>
+                                        <input className="form-input" type="text" placeholder="SecurePass@123" value={credPass} onChange={e => setCredPass(e.target.value)} />
+                                    </div>
+                                </div>
+                                <div className="form-group" style={{ margin: 0 }}>
+                                    <label className="form-label">Phone Number <span style={{ color: '#94a3b8', fontWeight: 400 }}>(optional — for OTP-based services)</span></label>
+                                    <input className="form-input" type="tel" placeholder="+91 9876543210" value={credPhone} onChange={e => setCredPhone(e.target.value)} style={{ maxWidth: 320 }} />
+                                </div>
+                                {(credEmail || credPass || credPhone) && (
+                                    <div style={{ padding: '12px 16px', background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 8 }}>
+                                        <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#64748b', marginBottom: 4, letterSpacing: '0.5px' }}>PREVIEW (stored as)</div>
+                                        <code style={{ fontSize: '0.85rem', color: '#4F46E5', fontWeight: 600 }}>{credEmail}{credPass ? `:${credPass}` : ''}{credPhone ? `:${credPhone}` : ''}</code>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {credType === 'number_pass' && (
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                                <div className="form-group" style={{ margin: 0 }}>
+                                    <label className="form-label">Phone / Mobile Number *</label>
+                                    <input className="form-input" type="tel" placeholder="+91 9876543210" value={credPhone} onChange={e => setCredPhone(e.target.value)} />
+                                </div>
+                                <div className="form-group" style={{ margin: 0 }}>
+                                    <label className="form-label">Password / PIN *</label>
+                                    <input className="form-input" type="text" placeholder="Pin1234" value={credPass} onChange={e => setCredPass(e.target.value)} />
+                                </div>
+                            </div>
+                        )}
+
+                        {credType === 'raw' && (
+                            <div className="form-group" style={{ margin: 0 }}>
+                                <label className="form-label">Raw Credential Content</label>
+                                <textarea className="form-input" rows={3} placeholder="Paste full credential string here..." value={credEmail} onChange={e => setCredEmail(e.target.value)} />
+                            </div>
+                        )}
+
+                        <div style={{ marginTop: 20, display: 'flex', gap: 12 }}>
+                            <button className="btn btn-primary" onClick={handleSingle}>Add Credential</button>
+                            <button className="btn btn-secondary" onClick={() => { setMode('table'); setCredEmail(''); setCredPass(''); setCredPhone(''); }}>Cancel</button>
+                        </div>
                     </div>
                 )}
 
