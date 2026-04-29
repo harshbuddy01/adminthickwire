@@ -2,8 +2,15 @@
 
 import { useState, useEffect } from 'react';
 import api from '@/lib/api';
-import { Mail, Search, Clock, CheckCircle2, ChevronRight, Reply, RefreshCw, Loader2, User, HelpCircle } from 'lucide-react';
+import { Mail, Search, CheckCircle2, Reply, RefreshCw, Loader2, HelpCircle, User } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+
+interface TicketMessage {
+    id: string;
+    sender: 'CUSTOMER' | 'ADMIN';
+    text: string;
+    createdAt: string;
+}
 
 interface SupportTicket {
     id: string;
@@ -13,6 +20,7 @@ interface SupportTicket {
     message: string;
     status: 'OPEN' | 'IN_PROGRESS' | 'RESOLVED';
     createdAt: string;
+    messages: TicketMessage[];
 }
 
 export default function SupportInboxPage() {
@@ -22,6 +30,7 @@ export default function SupportInboxPage() {
     const [replyText, setReplyText] = useState('');
     const [isLoading, setIsLoading] = useState(true);
     const [isReplying, setIsReplying] = useState(false);
+    const [isResolving, setIsResolving] = useState(false);
     const [filter, setFilter] = useState<'ALL' | 'OPEN' | 'RESOLVED'>('ALL');
 
     useEffect(() => {
@@ -33,6 +42,10 @@ export default function SupportInboxPage() {
         try {
             const { data } = await api.get('/support/admin');
             setTickets(data);
+            if (selectedTicket) {
+                const updatedTicket = data.find((t: any) => t.id === selectedTicket.id);
+                if (updatedTicket) setSelectedTicket(updatedTicket);
+            }
         } catch (error) {
             console.error('Failed to fetch tickets', error);
         } finally {
@@ -44,14 +57,28 @@ export default function SupportInboxPage() {
         if (!selectedTicket || !replyText.trim()) return;
         setIsReplying(true);
         try {
-            await api.post(`/support/admin/${selectedTicket.id}/reply`, { replyText });
+            const { data } = await api.post(`/support/admin/${selectedTicket.id}/reply`, { replyText });
             setReplyText('');
-            setTickets(tickets.map(t => t.id === selectedTicket.id ? { ...t, status: 'RESOLVED' } : t));
-            setSelectedTicket(null);
+            setSelectedTicket(data);
+            setTickets(tickets.map(t => t.id === data.id ? data : t));
         } catch (error) {
             console.error('Failed to reply', error);
         } finally {
             setIsReplying(false);
+        }
+    };
+
+    const handleResolve = async () => {
+        if (!selectedTicket) return;
+        setIsResolving(true);
+        try {
+            const { data } = await api.post(`/support/admin/${selectedTicket.id}/resolve`);
+            setSelectedTicket(data);
+            setTickets(tickets.map(t => t.id === data.id ? data : t));
+        } catch (error) {
+            console.error('Failed to resolve', error);
+        } finally {
+            setIsResolving(false);
         }
     };
 
@@ -87,7 +114,6 @@ export default function SupportInboxPage() {
             <div style={{ flex: 1, display: 'flex', gap: '24px', overflow: 'hidden' }}>
                 {/* INBOX PANE */}
                 <div style={{ width: '350px', background: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-
                     {/* Search & Filters */}
                     <div style={{ borderBottom: '1px solid #e2e8f0' }}>
                         <div style={{ padding: '16px', position: 'relative' }}>
@@ -159,11 +185,11 @@ export default function SupportInboxPage() {
                 </div>
 
                 {/* REPLY PANE */}
-                <div style={{ flex: 1, background: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                <div style={{ flex: 1, background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
                     {selectedTicket ? (
                         <>
                             {/* Head */}
-                            <div style={{ padding: '24px', borderBottom: '1px solid #e2e8f0', background: '#f8fafc', display: 'flex', justifyContent: 'space-between' }}>
+                            <div style={{ padding: '24px', borderBottom: '1px solid #e2e8f0', background: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <div style={{ display: 'flex', gap: '16px' }}>
                                     <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: '#e0e7ff', color: '#4f46e5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '1.2rem' }}>
                                         {selectedTicket.customerName.charAt(0).toUpperCase()}
@@ -175,22 +201,56 @@ export default function SupportInboxPage() {
                                         </p>
                                     </div>
                                 </div>
-                                <div style={{ textAlign: 'right' }}>
-                                    <div style={{ fontSize: '0.8rem', color: '#94a3b8', marginBottom: '8px' }}>
+                                <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
+                                    <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
                                         {new Date(selectedTicket.createdAt).toLocaleString()}
                                     </div>
+                                    {selectedTicket.status === 'OPEN' && (
+                                        <button onClick={handleResolve} disabled={isResolving} style={{
+                                            padding: '6px 12px', background: '#10b981', color: 'white', border: 'none', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px'
+                                        }}>
+                                            {isResolving ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />} Mark Resolved
+                                        </button>
+                                    )}
                                 </div>
                             </div>
 
-                            {/* Body */}
-                            <div style={{ flex: 1, overflowY: 'auto', padding: '24px 32px' }}>
-                                <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '20px', fontSize: '0.95rem', color: '#334155', whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
-                                    {selectedTicket.message}
-                                </div>
+                            {/* Body (Chat Thread) */}
+                            <div style={{ flex: 1, overflowY: 'auto', padding: '24px 32px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                                {selectedTicket.messages && selectedTicket.messages.map((msg, i) => (
+                                    <div key={msg.id || i} style={{
+                                        display: 'flex',
+                                        flexDirection: msg.sender === 'ADMIN' ? 'row-reverse' : 'row',
+                                        gap: '16px'
+                                    }}>
+                                        <div style={{
+                                            width: '36px', height: '36px', borderRadius: '50%', flexShrink: 0,
+                                            background: msg.sender === 'ADMIN' ? '#334155' : '#e0e7ff',
+                                            color: msg.sender === 'ADMIN' ? '#fff' : '#4f46e5',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '0.9rem'
+                                        }}>
+                                            {msg.sender === 'ADMIN' ? 'A' : selectedTicket.customerName.charAt(0).toUpperCase()}
+                                        </div>
+                                        <div style={{
+                                            background: msg.sender === 'ADMIN' ? '#4f46e5' : '#fff',
+                                            color: msg.sender === 'ADMIN' ? '#fff' : '#334155',
+                                            border: msg.sender === 'ADMIN' ? 'none' : '1px solid #e2e8f0',
+                                            padding: '16px', borderRadius: '12px', fontSize: '0.95rem', whiteSpace: 'pre-wrap', lineHeight: 1.5,
+                                            maxWidth: '75%',
+                                            borderTopLeftRadius: msg.sender === 'CUSTOMER' ? '0' : '12px',
+                                            borderTopRightRadius: msg.sender === 'ADMIN' ? '0' : '12px',
+                                        }}>
+                                            {msg.text}
+                                            <div style={{ fontSize: '0.7rem', marginTop: '8px', color: msg.sender === 'ADMIN' ? '#a5b4fc' : '#94a3b8', textAlign: msg.sender === 'ADMIN' ? 'right' : 'left' }}>
+                                                {new Date(msg.createdAt).toLocaleString()}
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
 
                                 {selectedTicket.status === 'RESOLVED' && (
                                     <div style={{
-                                        marginTop: '24px', padding: '16px', background: '#ecfdf5', border: '1px solid #d1fae5',
+                                        marginTop: '12px', padding: '16px', background: '#ecfdf5', border: '1px solid #d1fae5',
                                         borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center',
                                         gap: '12px', color: '#10b981', fontWeight: 600
                                     }}>
@@ -200,44 +260,45 @@ export default function SupportInboxPage() {
                             </div>
 
                             {/* Reply Box */}
-                            <div style={{ padding: '24px', borderTop: '1px solid #e2e8f0', background: '#fff' }}>
-                                <div style={{ display: 'flex', gap: '16px' }}>
-                                    <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#334155', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
-                                        A
-                                    </div>
-                                    <div style={{ flex: 1 }}>
-                                        <textarea
-                                            disabled={selectedTicket.status === 'RESOLVED' || isReplying}
-                                            value={replyText}
-                                            onChange={(e) => setReplyText(e.target.value)}
-                                            placeholder={selectedTicket.status === 'RESOLVED' ? "Cannot reply to a resolved ticket." : "Type your reply... (Sent directly to customer's email)"}
-                                            style={{
-                                                width: '100%', minHeight: '120px', padding: '16px', boxSizing: 'border-box',
-                                                border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '0.95rem', fontFamily: 'inherit',
-                                                resize: 'vertical', background: selectedTicket.status === 'RESOLVED' ? '#f8fafc' : '#fff',
-                                                outline: 'none'
-                                            }}
-                                        />
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px' }}>
-                                            <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
-                                                Sending as <strong style={{ color: '#475569' }}>admin@thickwire.com</strong>
-                                            </span>
-                                            <button
-                                                disabled={selectedTicket.status === 'RESOLVED' || !replyText.trim() || isReplying}
-                                                onClick={handleReply}
+                            {selectedTicket.status !== 'RESOLVED' && (
+                                <div style={{ padding: '24px', borderTop: '1px solid #e2e8f0', background: '#fff' }}>
+                                    <div style={{ display: 'flex', gap: '16px' }}>
+                                        <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#334155', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
+                                            A
+                                        </div>
+                                        <div style={{ flex: 1 }}>
+                                            <textarea
+                                                disabled={isReplying}
+                                                value={replyText}
+                                                onChange={(e) => setReplyText(e.target.value)}
+                                                placeholder="Type your reply... (Sent directly to customer's email and dashboard)"
                                                 style={{
-                                                    padding: '10px 20px', background: (selectedTicket.status === 'RESOLVED' || !replyText.trim()) ? '#94a3b8' : '#4f46e5',
-                                                    color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px',
-                                                    cursor: (selectedTicket.status === 'RESOLVED' || !replyText.trim()) ? 'not-allowed' : 'pointer'
+                                                    width: '100%', minHeight: '100px', padding: '16px', boxSizing: 'border-box',
+                                                    border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '0.95rem', fontFamily: 'inherit',
+                                                    resize: 'vertical', background: '#fff', outline: 'none'
                                                 }}
-                                            >
-                                                {isReplying ? <Loader2 size={16} /> : <Reply size={16} />}
-                                                Send Reply & Resolve
-                                            </button>
+                                            />
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px' }}>
+                                                <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
+                                                    Sending as <strong style={{ color: '#475569' }}>support@streamkart.store</strong>
+                                                </span>
+                                                <button
+                                                    disabled={!replyText.trim() || isReplying}
+                                                    onClick={handleReply}
+                                                    style={{
+                                                        padding: '10px 20px', background: !replyText.trim() ? '#94a3b8' : '#4f46e5',
+                                                        color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px',
+                                                        cursor: !replyText.trim() ? 'not-allowed' : 'pointer'
+                                                    }}
+                                                >
+                                                    {isReplying ? <Loader2 size={16} /> : <Reply size={16} />}
+                                                    Send Reply
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
+                            )}
                         </>
                     ) : (
                         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', background: '#f8fafc' }}>
@@ -245,7 +306,7 @@ export default function SupportInboxPage() {
                                 <HelpCircle size={36} color="#cbd5e1" />
                             </div>
                             <h3 style={{ margin: '0 0 8px 0', color: '#475569', fontSize: '1.2rem' }}>Select a Ticket</h3>
-                            <p style={{ margin: 0, fontSize: '0.95rem' }}>Select a support ticket from the inbox to read and reply.</p>
+                            <p style={{ margin: 0, fontSize: '0.95rem' }}>Select a support ticket from the inbox to view the conversation thread.</p>
                         </div>
                     )}
                 </div>
