@@ -7,7 +7,8 @@ import type { Order, Paginated } from '@/lib/types';
 export default function OrdersPage() {
     const [data, setData] = useState<Paginated<Order>>({ items: [], total: 0, page: 1, limit: 25 });
     const [loading, setLoading] = useState(true);
-    const [filters, setFilters] = useState({ paymentStatus: '', fulfillmentStatus: '', search: '', page: 1 });
+    // Default: hide EXPIRED/PENDING so only actionable orders show up
+    const [filters, setFilters] = useState({ paymentStatus: 'CONFIRMED', fulfillmentStatus: '', search: '', page: 1 });
     const [fulfillId, setFulfillId] = useState('');
     const [fulfillContent, setFulfillContent] = useState('');
 
@@ -28,6 +29,12 @@ export default function OrdersPage() {
         setFulfillId(''); setFulfillContent(''); load();
     };
 
+    const handleDelete = async (id: string) => {
+        if (!confirm('Are you sure you want to permanently delete this order?')) return;
+        await api.delete(`/orders/admin/${id}`);
+        load();
+    };
+
     return (
         <>
             <div className="top-header"><h1>Orders</h1></div>
@@ -41,6 +48,7 @@ export default function OrdersPage() {
                         <option value="PENDING">Pending</option>
                         <option value="CONFIRMED">Confirmed</option>
                         <option value="FAILED">Failed</option>
+                        <option value="EXPIRED">Expired</option>
                     </select>
                     <select className="form-select" style={{ width: 180 }} value={filters.fulfillmentStatus} onChange={e => setFilters({ ...filters, fulfillmentStatus: e.target.value, page: 1 })}>
                         <option value="">All Fulfillment</option>
@@ -61,10 +69,13 @@ export default function OrdersPage() {
                                     <td><div>{o.customerName}</div><div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{o.customerEmail}</div></td>
                                     <td>{o.service?.name} — {o.plan?.name}</td>
                                     <td>₹{Number(o.amountPaid).toLocaleString()}</td>
-                                    <td><span className={`badge ${o.paymentStatus === 'CONFIRMED' ? 'badge-success' : o.paymentStatus === 'FAILED' ? 'badge-danger' : 'badge-warning'}`}>{o.paymentStatus}</span></td>
+                                    <td><span className={`badge ${o.paymentStatus === 'CONFIRMED' ? 'badge-success' : o.paymentStatus === 'FAILED' || o.paymentStatus === 'EXPIRED' ? 'badge-danger' : 'badge-warning'}`}>{o.paymentStatus}</span></td>
                                     <td><span className={`badge ${o.fulfillmentStatus.includes('FULFILLED') ? 'badge-success' : o.fulfillmentStatus === 'MANUAL_PENDING' ? 'badge-accent' : 'badge-muted'}`}>{o.fulfillmentStatus}</span></td>
                                     <td style={{ fontSize: '0.8rem' }}>{new Date(o.createdAt).toLocaleDateString()}</td>
-                                    <td>{o.fulfillmentStatus === 'MANUAL_PENDING' && <button className="btn btn-primary btn-sm" onClick={() => setFulfillId(o.id)}>Fulfill</button>}</td>
+                                    <td style={{ display: 'flex', gap: 6 }}>
+                                        {o.fulfillmentStatus === 'MANUAL_PENDING' && <button className="btn btn-primary btn-sm" onClick={() => setFulfillId(o.id)}>Fulfill</button>}
+                                        {(o.paymentStatus === 'EXPIRED' || o.paymentStatus === 'FAILED') && <button className="btn btn-danger btn-sm" onClick={() => handleDelete(o.id)}>Delete</button>}
+                                    </td>
                                 </tr>
                             ))}
                             {data.items.length === 0 && <tr><td colSpan={8} className="table-empty">{loading ? 'Loading...' : 'No orders'}</td></tr>}
