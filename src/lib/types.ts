@@ -53,7 +53,7 @@ export interface Order {
     customerEmail: string;
     customerPhone: string;
     amountPaid: string;
-    paymentStatus: 'PENDING' | 'CONFIRMED' | 'FAILED' | 'REFUNDED';
+    paymentStatus: 'PENDING' | 'CONFIRMED' | 'FAILED' | 'REFUNDED' | 'EXPIRED';
     fulfillmentStatus: 'PENDING' | 'FULFILLED' | 'MANUAL_PENDING' | 'MANUAL_FULFILLED';
     deliveredAt: string | null;
     createdAt: string;
