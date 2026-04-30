@@ -40,7 +40,7 @@ export default function CouponsPage() {
     const fetchCoupons = useCallback(async () => {
         setLoading(true);
         try {
-            const { data } = await api.get('/admin/coupons');
+            const { data } = await api.get('/coupons/admin');
             setCoupons(data);
         } catch (err) { console.error(err); }
         finally { setLoading(false); }
@@ -61,9 +61,9 @@ export default function CouponsPage() {
                 expiresAt: form.expiresAt || undefined,
             };
             if (editingId) {
-                await api.patch(`/api/v1/admin/coupons/${editingId}`, payload);
+                await api.patch(`/coupons/admin/${editingId}`, payload);
             } else {
-                await api.post('/admin/coupons', payload);
+                await api.post('/coupons/admin', payload);
             }
             setShowForm(false);
             setEditingId(null);
@@ -91,20 +91,20 @@ export default function CouponsPage() {
 
     const deactivate = async (id: string) => {
         if (!confirm('Deactivate this coupon?')) return;
-        await api.delete(`/api/v1/admin/coupons/${id}`);
+        await api.delete(`/coupons/admin/${id}`);
         fetchCoupons();
     };
 
     const viewUsage = async (id: string) => {
         try {
-            const { data } = await api.get(`/api/v1/admin/coupons/${id}/usage`);
+            const { data } = await api.get(`/coupons/admin/${id}/usage`);
             setUsageData({ couponId: id, data });
         } catch (err) { console.error(err); }
     };
 
     const handleBulkGenerate = async () => {
         try {
-            const { data } = await api.post('/api/v1/admin/coupons/bulk-generate', bulkForm);
+            const { data } = await api.post('/coupons/admin/bulk-generate', bulkForm);
             alert(`Generated ${data.generated} coupons!`);
             setShowBulk(false);
             fetchCoupons();
