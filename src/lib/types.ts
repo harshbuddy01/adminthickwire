@@ -57,8 +57,9 @@ export interface Order {
     fulfillmentStatus: 'PENDING' | 'FULFILLED' | 'MANUAL_PENDING' | 'MANUAL_FULFILLED';
     deliveredAt: string | null;
     createdAt: string;
-    service: { name: string };
+    service: { name: string; slug: string };
     plan: { name: string };
+    serviceCredentials?: Record<string, any>;
 }
 
 export interface SupportTicket {
